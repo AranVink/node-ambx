@@ -1,0 +1,11 @@
+{
+  "name": "node-ambx",
+  "version": "0.0.1",
+  "description": "AMBX driver for node, using libusb. Based on code of https://github.com/theimpossibleastronaut/combustd",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Aran Vink",
+  "license": "ISC"
+}
