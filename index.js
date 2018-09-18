@@ -53,18 +53,26 @@ const ambxEndpoint = ambxInterface.endpoint(endpoint_out);
 ambxEndpoint.transferType = usb.LIBUSB_TRANSFER_TYPE_INTERRUPT;
 
 console.log("Setting light color to 0x10");
-setAllLights(ambxEndpoint, 0x20, 0x20, 0x20);
-//setLight(ambxEndpoint, 0x00, 0x00, 0x00);
+for(var i = 0; i < 100; i++) {
+var c = random(0,256);
+console.log("SetAllLights");
+setAllLights(ambxEndpoint, random(0,256), random(0,256), random(0,256));
+console.log("SetAllLightsComplete")
+}
 
 console.log("Releasing interface");
-ambxInterface.release(true, function (error) {
+/*ambxInterface.release(true, function (error) {
     console.log("Interface released");
     if (error) {
         console.log(error);
     }
     console.log("Closing ambxDevice");
     ambxDevice.close();
-});
+});*/
+
+function random(low, high) {
+    return Math.floor(Math.random() * (high - low) + low);
+}
 
 function setAllLights(ambxEndpoint, r, g, b) {
     const dataL = [0xA1, light_left, set_light_color, r, g, b];
@@ -73,9 +81,9 @@ function setAllLights(ambxEndpoint, r, g, b) {
     const dataWWR = [0xA1, light_ww_right, set_light_color, r, g, b];
     const dataR = [0xA1, light_right, set_light_color, r, g, b];
 
-    ambxEndpoint.transfer(dataL, function (error) { console.log(error); });
-    ambxEndpoint.transfer(dataWWL, function (error) { console.log(error); });
-    ambxEndpoint.transfer(dataWWC, function (error) { console.log(error); });
-    ambxEndpoint.transfer(dataWWR, function (error) { console.log(error); });
-    ambxEndpoint.transfer(dataR, function (error) { console.log(error); });
+    ambxEndpoint.transfer(dataL, function (error) { console.log("L" + dataL); });
+    ambxEndpoint.transfer(dataWWL, function (error) { console.log("WWL" + dataWWL); });
+    ambxEndpoint.transfer(dataWWC, function (error) { console.log("WWC" + dataWWC); });
+    ambxEndpoint.transfer(dataWWR, function (error) { console.log("WWR" + dataWWR); });
+    ambxEndpoint.transfer(dataR, function (error) { console.log("R" + dataR); });
 }
