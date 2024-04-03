@@ -37,38 +37,55 @@ const usb = require('usb'),
     light_ww_center = 0x3B,
     light_ww_right = 0x4B;
 
-console.log("Looking for ambx");
-const ambxDevice = usb.findByIds(usb_vid, usb_pid);
+console.log("Looking for AMBX devices");
+let deviceList = []
+usb.getDeviceList().forEach(element => {
+    if (element.deviceDescriptor.idVendor == usb_vid && element.deviceDescriptor.idProduct == usb_pid) {
+        deviceList.push(element);
+    }
+});
 
-console.log("Opening device");
-ambxDevice.open();
-
-console.log("Using first interface");
-const ambxInterface = ambxDevice.interfaces[0];
-console.log("Claiming first interface");
-ambxInterface.claim();
-
-console.log("Getting out endpoint");
-const ambxEndpoint = ambxInterface.endpoint(endpoint_out);
-ambxEndpoint.transferType = usb.LIBUSB_TRANSFER_TYPE_INTERRUPT;
-
-console.log("Setting light color to 0x10");
-for(var i = 0; i < 100; i++) {
-var c = random(0,256);
-console.log("SetAllLights");
-setAllLights(ambxEndpoint, random(0,256), random(0,256), random(0,256));
-console.log("SetAllLightsComplete")
+console.log(`Found ${deviceList.length} AMBX devices`);
+if (deviceList.length == 0) {
+    return;
 }
 
-console.log("Releasing interface");
-/*ambxInterface.release(true, function (error) {
-    console.log("Interface released");
-    if (error) {
-        console.log(error);
-    }
-    console.log("Closing ambxDevice");
-    ambxDevice.close();
-});*/
+let endpointList = []
+
+deviceList.forEach(device => {
+    console.log("Opening device");
+    device.open();
+
+    console.log("Using first interface");
+    const ambxInterface = device.interfaces[0];
+    console.log("Claiming first interface");
+    ambxInterface.claim();
+
+    console.log("Getting out endpoint");
+    const ambxEndpoint = ambxInterface.endpoint(endpoint_out);
+    ambxEndpoint.transferType = usb.LIBUSB_TRANSFER_TYPE_INTERRUPT;
+    endpointList.push(ambxEndpoint);
+});
+
+
+start(endpointList);
+async function start(endPointList) {
+    //while(true) {
+        //await sweep(endpointList);
+    //}
+    //for (let c = 0; c < 256; c++) {
+
+        const asyncFunctions = endpointList.map((value) => {return setAllLights(value, 0, 255, 0);})
+    await Promise.all(asyncFunctions);
+        //setAllLights(ambxEndpoint, 256, 256, 256);
+        //await sleep(waittime)
+    //}
+}
+
+async function sweep(endpointList) {
+    const asyncFunctions = endpointList.map((value) => {return colorSweep(value);})
+    await Promise.all(asyncFunctions);
+}
 
 function random(low, high) {
     return Math.floor(Math.random() * (high - low) + low);
@@ -81,9 +98,76 @@ function setAllLights(ambxEndpoint, r, g, b) {
     const dataWWR = [0xA1, light_ww_right, set_light_color, r, g, b];
     const dataR = [0xA1, light_right, set_light_color, r, g, b];
 
-    ambxEndpoint.transfer(dataL, function (error) { console.log("L" + dataL); });
-    ambxEndpoint.transfer(dataWWL, function (error) { console.log("WWL" + dataWWL); });
-    ambxEndpoint.transfer(dataWWC, function (error) { console.log("WWC" + dataWWC); });
-    ambxEndpoint.transfer(dataWWR, function (error) { console.log("WWR" + dataWWR); });
-    ambxEndpoint.transfer(dataR, function (error) { console.log("R" + dataR); });
+    ambxEndpoint.transfer(dataL, function (error, data) { transferCallback(error, dataL, data, "L"); });
+    ambxEndpoint.transfer(dataWWL, function (error, data) { transferCallback(error, dataWWL, data, "WWL"); });
+    ambxEndpoint.transfer(dataWWC, function (error, data) { transferCallback(error, dataWWC, data, "WWC"); });
+    ambxEndpoint.transfer(dataWWR, function (error, data) { transferCallback(error, dataWWR, data, "WWR"); });
+    ambxEndpoint.transfer(dataR, function (error, data) { transferCallback(error, dataR, data, "R"); });
 }
+
+function transferCallback(error, dataSent, data, light) {
+    if (error) {
+        console.log(`${error} ${light} ${dataSent} ${data}`);
+    }
+}
+
+async function colorSweep(ambxEndpoint) {
+    console.log("Setting light colors red");
+    let r, g, b = 0
+    let waittime = 5
+    for (r = 0; r < 256; r++) {
+        setAllLights(ambxEndpoint, r, g, b);
+        await sleep(waittime)
+    }
+    r = 0;
+    console.log("Setting light colors green");
+    for (g = 0; g < 256; g++) {
+        setAllLights(ambxEndpoint, r, g, b);
+        await sleep(waittime)
+    }
+    g = 0;
+    console.log("Setting light colors blue");
+    for (b = 0; b < 256; b++) {
+        setAllLights(ambxEndpoint, r, g, b);
+        await sleep(waittime)
+    }
+    console.log("Setting light colors white");
+    for (let c = 0; c < 256; c++) {
+        setAllLights(ambxEndpoint, c, c, c);
+        await sleep(waittime)
+    }
+}
+
+function release() {
+    console.log("Releasing interface");
+    ambxInterface.release(true, function (error) {
+        console.log("Interface released");
+        if (error) {
+            console.log(error);
+        }
+        console.log("Closing ambxDevice");
+        ambxDevice.close();
+    });
+}
+
+function sleep(ms) {
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
+}
+
+if (process.platform === "win32") {
+    var rl = require("readline").createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    rl.on("SIGINT", function () {
+        process.emit("SIGINT");
+    });
+}
+
+process.on("SIGINT", function () {
+    //graceful shutdown
+    process.exit();
+});
