@@ -1,45 +1,46 @@
 'use strict';
-const usb = require('usb'),
+import { usb, getDeviceList } from 'usb';
+const devices = getDeviceList();
 
-    //USB VID and PID
-    usb_vid = 0x0471,
-    usb_pid = 0x083F,
+//USB VID and PID
+const usb_vid = 0x0471;
+const usb_pid = 0x083F;
 
-    //Usb endpoints
-    endpoint_in = 0x81,
-    endpoint_out = 0x02,
-    endpoint_pnp = 0x83,
+//Usb endpoints
+const endpoint_in = 0x81;
+const endpoint_out = 0x02;
+const endpoint_pnp = 0x83;
 
-    // -- Commands --
+// -- Commands --
 
-    // Set a single color, for a specific light
-    // Params 0xRR 0xGG 0xBB
-    // 0xRR = Red color
-    // 0xGG = Green color
-    // 0xBB = Blue color
-    set_light_color = 0x03,
+// Set a single color, for a specific light
+// Params 0xRR 0xGG 0xBB
+// 0xRR = Red color
+// 0xGG = Green color
+// 0xBB = Blue color
+const set_light_color = 0x03;
 
-    // Set a color sequence using delays
-    // Params 0xMM 0xMM then a repeated sequence of 0xRR 0xGG 0xBB
-    // 0xMM = milliseconds
-    // 0xMM = milliseconds
-    // 0xRR = Red color
-    // 0xGG = Green color
-    // 0xBB = Blue color
-    set_timed_color_sequence = 0x72,
+// Set a color sequence using delays
+// Params 0xMM 0xMM then a repeated sequence of 0xRR 0xGG 0xBB
+// 0xMM = milliseconds
+// 0xMM = milliseconds
+// 0xRR = Red color
+// 0xGG = Green color
+// 0xBB = Blue color
+const set_timed_color_sequence = 0x72;
 
-    //LEFT/RIGHT lights. Normally placed adjecent to your screen.
-    light_left = 0x0B,
-    light_right = 0x1B,
+//LEFT/RIGHT lights. Normally placed adjecent to your screen.
+const light_left = 0x0B;
+const light_right = 0x1B;
 
-    //Wallwasher lights. Normally placed behind your screen.
-    light_ww_left = 0x2B,
-    light_ww_center = 0x3B,
-    light_ww_right = 0x4B;
+//Wallwasher lights. Normally placed behind your screen.
+const light_ww_left = 0x2B;
+const light_ww_center = 0x3B;
+const light_ww_right = 0x4B;
 
 console.log("Looking for AMBX devices");
 let deviceList = []
-usb.getDeviceList().forEach(element => {
+devices.forEach(element => {
     if (element.deviceDescriptor.idVendor == usb_vid && element.deviceDescriptor.idProduct == usb_pid) {
         deviceList.push(element);
     }
@@ -71,19 +72,19 @@ deviceList.forEach(device => {
 start(endpointList);
 async function start(endPointList) {
     //while(true) {
-        //await sweep(endpointList);
+    //await sweep(endpointList);
     //}
     //for (let c = 0; c < 256; c++) {
 
-        const asyncFunctions = endpointList.map((value) => {return setAllLights(value, 0, 255, 0);})
+    const asyncFunctions = endpointList.map((value) => { return setAllLights(value, 0, 255, 0); })
     await Promise.all(asyncFunctions);
-        //setAllLights(ambxEndpoint, 256, 256, 256);
-        //await sleep(waittime)
+    //setAllLights(ambxEndpoint, 256, 256, 256);
+    //await sleep(waittime)
     //}
 }
 
 async function sweep(endpointList) {
-    const asyncFunctions = endpointList.map((value) => {return colorSweep(value);})
+    const asyncFunctions = endpointList.map((value) => { return colorSweep(value); })
     await Promise.all(asyncFunctions);
 }
 
