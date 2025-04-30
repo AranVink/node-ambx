@@ -1,4 +1,3 @@
-'use strict';
 import { usb, getDeviceList } from 'usb';
 const devices = getDeviceList();
 
@@ -48,7 +47,7 @@ devices.forEach(element => {
 
 console.log(`Found ${deviceList.length} AMBX devices`);
 if (deviceList.length == 0) {
-    return;
+    process.exit();
 }
 
 let endpointList = []
@@ -71,16 +70,16 @@ deviceList.forEach(device => {
 
 start(endpointList);
 async function start(endPointList) {
-    //while(true) {
-    //await sweep(endpointList);
-    //}
-    //for (let c = 0; c < 256; c++) {
+    // while(true) {
+    // await sweep(endpointList);
+    // }
+    // for (let c = 0; c < 256; c++) {
 
     const asyncFunctions = endpointList.map((value) => { return setAllLights(value, 0, 255, 0); })
     await Promise.all(asyncFunctions);
-    //setAllLights(ambxEndpoint, 256, 256, 256);
-    //await sleep(waittime)
-    //}
+    //   setAllLights(ambxEndpoint, 256, 256, 256);
+    //   await sleep(waittime)
+    // }
 }
 
 async function sweep(endpointList) {
